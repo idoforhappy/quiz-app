@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>AR 퀴즈콜라보</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080c18;--panel:#0f1623;--panel2:#18202e;--border:#1e2d47;--accent:#00f5a0;--accent2:#00b4d8;--accent3:#f72585;--accent4:#ffb703;--text:#e2e8f0;--muted:#64748b;--danger:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text)}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.screen.hidden{display:none!important}
+#scrLogin{background:var(--bg);align-items:center;justify-content:center;padding:20px;background-image:radial-gradient(ellipse at 30% 40%,#00f5a018,transparent 55%),radial-gradient(ellipse at 70% 70%,#f7258512,transparent 55%)}
+.logo{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--accent);text-align:center;text-shadow:0 0 30px var(--accent)80;letter-spacing:3px}
+.lbox{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:26px 22px;width:100%;max-width:380px}
+.linput{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:16px;margin-top:6px}
+.linput:focus{outline:none;border-color:var(--accent)}
+.lbtn{width:100%;margin-top:16px;padding:15px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:700;cursor:pointer}
+.lbtn:active{transform:scale(.97)}
+.lerr{color:var(--danger);font-size:12px;text-align:center;margin-top:8px;min-height:16px}
+#scrWait{background:var(--bg);background-image:radial-gradient(ellipse at 50% 20%,#00f5a012,transparent 50%)}
+.wtop{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.sbar{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 18px;background:linear-gradient(135deg,var(--accent)18,var(--accent2)10);border-bottom:1px solid var(--accent)30;flex-shrink:0}
+.sval{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--accent4)}
+.wstats{display:flex;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.wstat{flex:1;padding:13px;text-align:center}
+.wstatv{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--accent4)}
+.wstatl{font-size:10px;color:var(--muted);margin-top:3px}
+.wdiv{width:1px;background:var(--border);margin:10px 0}
+.wbody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px;text-align:center}
+.pulse{position:relative;width:110px;height:110px;display:flex;align-items:center;justify-content:center}
+.pulse::before,.pulse::after{content:'';position:absolute;border-radius:50%;border:2px solid var(--accent);animation:rpulse 2.5s ease-out infinite}
+.pulse::before{width:100%;height:100%}.pulse::after{width:78%;height:78%;animation-delay:.5s}
+@keyframes rpulse{0%,100%{transform:scale(.9);opacity:.7}50%{transform:scale(1.1);opacity:.25}}
+.wicon{font-size:56px;animation:float 3s ease-in-out infinite;position:relative;z-index:1}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.wdots{display:flex;gap:8px}
+.wd{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:db .9s infinite}
+.wd:nth-child(2){animation-delay:.2s}.wd:nth-child(3){animation-delay:.4s}
+@keyframes db{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:1;transform:translateY(-6px)}}
+#scrMain{background:var(--bg)}
+.mhdr{display:flex;align-items:center;gap:10px;padding:11px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.mlogo{font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:var(--accent);letter-spacing:2px}
+.mscore{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--accent4);margin-left:auto}
+.mbody{flex:1;overflow-y:auto;padding:14px}
+.bnav{flex-shrink:0;background:var(--panel);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nbtn{flex:1;padding:10px 4px 7px;border:none;background:transparent;color:var(--muted);font-family:'Noto Sans KR',sans-serif;font-size:9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nbtn.active{color:var(--accent)}.nicon{font-size:21px;line-height:1}
+.acard{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:11px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.acard:active{transform:scale(.97)}
+#scrQR{background:#000;position:relative}
+.qhdr{position:absolute;top:0;left:0;right:0;padding:14px 16px;background:linear-gradient(to bottom,#000c,transparent);z-index:10;display:flex;align-items:center;gap:10px}
+.bbtn{padding:7px 14px;border-radius:8px;border:1px solid #fff4;background:#fff2;color:#fff;font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+#qrVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#qrCanvas{display:none}
+.qov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.qframe{width:230px;height:230px;position:relative}
+.qc{position:absolute;width:30px;height:30px;border-color:var(--accent);border-style:solid}
+.qc.tl{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.qc.tr{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.qc.bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.qc.br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.qscan{position:absolute;left:8px;right:8px;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent),0 0 20px var(--accent)50;animation:scan 2s linear infinite}
+@keyframes scan{0%{top:8px}100%{top:calc(100% - 10px)}}
+.qhint{position:absolute;bottom:40px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 2px 8px #000}
+#scrQuiz{background:var(--bg);position:relative}
+.qzhdr{padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:10px}
+.qzbadge{background:var(--accent2)20;border:1px solid var(--accent2)60;color:var(--accent2);padding:4px 10px;border-radius:7px;font-size:12px;font-weight:700}
+.qzprog{font-size:11px;color:var(--muted)}
+.qzbody{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.qnbadge{background:var(--accent3)20;border:1px solid var(--accent3)60;color:var(--accent3);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;align-self:flex-start}
+.qqtext{font-size:17px;font-weight:700;color:var(--text);line-height:1.6;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;border-left:3px solid var(--accent2)}
+.optgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.optblk{background:var(--panel);border:2px solid var(--border);border-radius:13px;padding:15px 10px;cursor:pointer;text-align:center;font-size:14px;font-weight:600;color:var(--text);min-height:70px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;-webkit-user-select:none;user-select:none}
+.optblk:active{opacity:.8}
+.optn{font-size:10px;color:var(--muted);font-weight:700}
+.optblk.cor{border-color:var(--accent)!important;background:var(--accent)20!important;color:var(--accent)!important}
+.optblk.wrg{border-color:var(--danger)!important;background:var(--danger)20!important;color:var(--danger)!important}
+.optblk.sel{border-color:var(--accent2);background:var(--accent2)20;color:var(--accent2)}
+.cdov{position:absolute;inset:0;background:rgba(8,12,24,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:50;backdrop-filter:blur(10px)}
+.cdtimer{font-family:'Orbitron',monospace;font-size:64px;font-weight:900;color:var(--danger);text-shadow:0 0 30px var(--danger)80}
+.cdwrong{font-size:26px;font-weight:900;color:var(--danger);letter-spacing:2px}
+.cdready{font-size:20px;font-weight:900;color:var(--accent);padding:14px 26px;border-radius:14px;background:var(--accent)15;border:2px solid var(--accent)60;animation:pop .4s ease}
+.corov{position:absolute;inset:0;background:rgba(8,12,24,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:50;backdrop-filter:blur(10px)}
+.cor-card{background:var(--panel);border:2px solid var(--accent);border-radius:22px;padding:22px 28px;text-align:center;box-shadow:0 0 50px var(--accent)30;animation:pop .5s cubic-bezier(.36,.07,.19,.97)}
+.cor-emoji{font-size:90px;display:block;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 20px var(--accent))}
+.cor-name{font-size:20px;font-weight:700;margin-top:8px}
+.cor-pts{font-family:'Orbitron',monospace;font-size:18px;color:var(--accent4);font-weight:900;margin-top:2px}
+.cor-also{background:var(--panel2);border:1px solid var(--accent3)40;border-radius:12px;padding:9px 14px;text-align:center;max-width:260px}
+.autobar{background:var(--accent)30;border-radius:4px;height:4px;width:200px;overflow:hidden}
+.autofill{height:100%;background:var(--accent);animation:fillbar 1s linear forwards}
+@keyframes fillbar{from{width:0}to{width:100%}}
+@keyframes pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes pfly{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(-110vh) rotate(720deg);opacity:0}}
+.agrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:4px 0}
+.aac{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:12px 8px;text-align:center;position:relative;cursor:pointer}
+.aac:active{transform:scale(.95)}
+.aac.got{border-color:var(--accent4)80;box-shadow:0 0 14px var(--accent4)20}
+.aac.ngot{filter:brightness(.5) saturate(.4)}
+.astar{position:absolute;top:4px;right:4px;font-size:13px}
+.aemoji{font-size:48px;display:block;line-height:1.2;margin-bottom:5px}
+.igrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.iitem{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:12px;text-align:center}
+.ritem{display:flex;align-items:center;gap:11px;padding:13px;background:var(--panel);border:1px solid var(--border);border-radius:11px;margin-bottom:7px}
+.rme{border-color:var(--accent)!important}
+.nbanner{background:var(--accent4)18;border:1px solid var(--accent4)50;border-radius:10px;padding:10px 13px;margin-bottom:10px;display:flex;gap:8px}
+.endbanner{background:var(--danger)18;border:1px solid var(--danger)50;border-radius:11px;padding:14px;text-align:center;margin-bottom:10px}
+.wov{position:fixed;inset:0;background:#00000095;z-index:900;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
+.wbox{background:var(--panel);border:1px solid var(--border);border-radius:24px 24px 0 0;width:100%;max-width:480px;height:82vh;display:flex;flex-direction:column;animation:slideUp .35s cubic-bezier(.22,.8,.36,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.whdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.wbdy{flex:1;overflow-y:auto;padding:16px 20px}
+.iov{position:fixed;inset:0;background:#00000095;z-index:800;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
+.ibox{background:var(--panel);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:480px;max-height:82vh;overflow-y:auto;animation:slideUp .35s cubic-bezier(.22,.8,.36,1)}
+.iinfo{background:var(--panel2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}
+#scrSuspended{background:var(--bg);align-items:center;justify-content:center;text-align:center;padding:40px}
+.toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--accent);z-index:9999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px var(--accent)25;animation:tup .3s ease}
+@keyframes tup{from{transform:translate(-50%,14px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="screen" id="scrLogin">
+  <div style="padding:34px 20px 0;text-align:center">
+    <div class="logo">🎮 AR QUIZ</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:24px">증강현실 퀴즈 탐험</div>
+  </div>
+  <div class="lbox" style="margin:0 auto">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600">닉네임</div>
+    <input class="linput" id="nickInput" placeholder="이름 입력 (최대 8글자)" maxlength="8"
+      autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text">
+    <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--muted)">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:db .9s infinite"></div>
+      <span id="playerCountTxt">참가자 0 / 30명</span>
+    </div>
+    <button class="lbtn" id="joinBtn">입장하기 🚀</button>
+    <div class="lerr" id="loginErr"></div>
+  </div>
+</div>
+
+<div class="screen hidden" id="scrWait">
+  <div class="wtop">
+    <div style="font-family:'Orbitron',monospace;font-size:12px;font-weight:900;color:var(--accent)">🎮 AR QUIZ</div>
+    <div id="wBadge" style="background:var(--accent)20;border:1px solid var(--accent)40;border-radius:20px;padding:4px 12px;font-size:11px;color:var(--accent);font-weight:700">0/30명</div>
+  </div>
+  <div class="sbar">
+    <span style="font-size:11px;color:var(--muted);font-weight:600">⭐ 점수 합계</span>
+    <span class="sval" id="wTotalScore">0</span>
+    <span style="font-size:11px;color:var(--muted)">점</span>
+  </div>
+  <div class="wstats">
+    <div class="wstat"><div class="wstatv" id="wCorrect">0</div><div class="wstatl">정답 수</div></div>
+    <div class="wdiv"></div>
+    <div class="wstat"><div class="wstatv" id="wColl">0</div><div class="wstatl">보상 수집</div></div>
+  </div>
+  <div class="wbody">
+    <div class="pulse"><div class="wicon">⏳</div></div>
+    <div style="font-size:22px;font-weight:700;color:var(--accent)" id="wNick"></div>
+    <div style="font-size:15px;font-weight:700">게임 시작 준비중</div>
+    <div class="wdots"><div class="wd"></div><div class="wd"></div><div class="wd"></div></div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.8;max-width:280px;text-align:center">관리자가 게임을 시작하면<br>자동으로 카메라가 켜집니다 📷</div>
+  </div>
+</div>
+
+<div class="screen hidden" id="scrMain">
+  <div class="mhdr">
+    <div class="mlogo">QUIZ</div>
+    <div style="font-size:13px;font-weight:700" id="mainNick">—</div>
+    <div class="mscore" id="mainScore">0</div>
+    <span style="font-size:10px;color:var(--muted)">점</span>
+  </div>
+  <div class="mbody" id="mainBody"></div>
+  <div class="bnav">
+    <button class="nbtn active" onclick="showTab('home')" id="nb-home"><span class="nicon">🏠</span><span>홈</span></button>
+    <button class="nbtn" onclick="openQR()" id="nb-qr"><span class="nicon">📷</span><span>QR 스캔</span></button>
+    <button class="nbtn" onclick="showTab('inv')" id="nb-inv"><span class="nicon">🎒</span><span>보상함</span></button>
+    <button class="nbtn" onclick="showTab('animals')" id="nb-animals"><span class="nicon">🦁</span><span>동식물</span></button>
+    <button class="nbtn" onclick="showTab('rank')" id="nb-rank"><span class="nicon">🏆</span><span>순위</span></button>
+  </div>
+</div>
+
+<div class="screen hidden" id="scrQR" style="position:relative">
+  <div class="qhdr">
+    <button class="bbtn" onclick="stopQR()">← 뒤로</button>
+    <div style="font-size:14px;font-weight:700;color:#fff">📷 QR 코드 스캔</div>
+  </div>
+  <video id="qrVideo" autoplay playsinline muted></video>
+  <canvas id="qrCanvas"></canvas>
+  <div class="qov">
+    <div class="qframe">
+      <div class="qc tl"></div><div class="qc tr"></div>
+      <div class="qc bl"></div><div class="qc br"></div>
+      <div class="qscan"></div>
+    </div>
+  </div>
+  <div class="qhint">QR 코드를 프레임 안에 맞춰주세요</div>
+</div>
+
+<div class="screen hidden" id="scrQuiz" style="position:relative">
+  <div class="qzhdr">
+    <span class="qzbadge" id="qrBadge">QR #?</span>
+    <span class="qzprog" id="qzProg">1/6</span>
+    <div style="flex:1"></div>
+    <button style="padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer" onclick="exitQuiz()">✕ 나가기</button>
+  </div>
+  <div class="qzbody" id="qzBody"></div>
+  <div class="cdov" id="cdOv" style="display:none">
+    <div class="cdwrong">😵 틀렸습니다!</div>
+    <div style="font-size:52px">🔒</div>
+    <div class="cdtimer" id="cdTimer">60</div>
+    <div style="font-size:13px;color:var(--muted);text-align:center;line-height:1.8">잠시 후 다시 도전하세요!</div>
+    <div id="cdRW" style="display:none"><div class="cdready">✅ 사용가능</div></div>
+  </div>
+  <div class="corov" id="corOv" style="display:none">
+    <div style="font-size:32px;font-weight:900;color:var(--accent);animation:pop .4s ease">🎉 정답!</div>
+    <div class="cor-card">
+      <span class="cor-emoji" id="corEmoji">🦢</span>
+      <div class="cor-name" id="corName">두루미 획득!</div>
+      <div class="cor-pts" id="corPts">+350점</div>
+    </div>
+    <div class="cor-also" id="corAlso" style="display:none">
+      <div style="font-size:10px;color:var(--accent3);font-weight:700;margin-bottom:3px">📋 정보 획득!</div>
+      <div style="font-size:12px;color:var(--text);font-weight:600" id="corAlsoTxt"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted)">1초 후 QR 스캔으로 이동합니다...</div>
+    <div class="autobar"><div class="autofill" id="autoFill"></div></div>
+  </div>
+</div>
+
+<div class="screen hidden" id="scrSuspended">
+  <div style="font-size:60px;margin-bottom:20px">⛔</div>
+  <div style="font-size:20px;font-weight:700;color:var(--danger);margin-bottom:12px">활동 정지됨</div>
+  <div style="font-size:14px;color:var(--muted);line-height:1.8">관리자에 의해 활동이 정지되었습니다.<br>선생님께 문의해주세요.</div>
+</div>
+
+<div class="iov" id="infoOv" style="display:none" onclick="if(event.target===this)closeInfo()">
+  <div class="ibox">
+    <div style="display:flex;align-items:center;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:700">📋 내 정보 획득 목록</div>
+      <div style="flex:1"></div>
+      <button onclick="closeInfo()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px">✕</button>
+    </div>
+    <div id="infoList"></div>
+  </div>
+</div>
+
+<div class="wov" id="wikiOv" style="display:none" onclick="if(event.target===this)closeWiki()">
+  <div class="wbox">
+    <div class="whdr">
+      <span id="wEmoji" style="font-size:36px">🦢</span>
+      <div>
+        <div style="font-size:16px;font-weight:700" id="wTitle">두루미</div>
+        <div style="font-size:11px;color:var(--muted)" id="wSub">천연기념물</div>
+      </div>
+      <button onclick="closeWiki()" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px">✕</button>
+    </div>
+    <div class="wbdy">
+      <div style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;background:var(--accent4)20;color:var(--accent4);margin-bottom:12px" id="wBadgeEl">🐾 동물</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.8;margin-bottom:12px" id="wDesc">설명</div>
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);margin-bottom:12px" id="wPts">+200점</div>
+      <div id="wGotEl" style="display:none;background:var(--accent4)20;border:1px solid var(--accent4)50;border-radius:10px;padding:10px;text-align:center;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--accent4)">⭐ 이미 획득한 동식물입니다!</div>
+      <button id="wNavBtn" onclick="openNaver()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--panel2);border:1px solid var(--accent2)40;border-radius:12px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif">📖 네이버 백과사전에서 더 보기</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+'use strict';
+var FB_URL='https://my-student-app-c97d5-default-rtdb.firebaseio.com';
+var MAX_ST=30,QR_COUNT=10,QUIZ_PER_QR=6,COOLDOWN_S=60,SK='arquiz_data';
+var _m={};
+var SS={
+  get:function(k){try{return localStorage.getItem(k);}catch(e){return _m[k]!=null?String(_m[k]):null;}},
+  set:function(k,v){_m[k]=v;try{localStorage.setItem(k,v);}catch(e){}},
+  del:function(k){delete _m[k];try{localStorage.removeItem(k);}catch(e){}}
+};
+var me=null;
+var gs={status:'waiting',quizzes:[],students:[],notices:[],privateMessages:[],animals3D:[],infoMissions:[]};
+var curQR=null,qList=[],qIdx=0,locked=false;
+var cdTimers={},cdInv=null;
+var qrStream=null,qrRaf=null,polId=null,curScr='scrLogin',curNavUrl='';
+
+function fbGet(cb){fetch(FB_URL+'/arquiz.json').then(function(r){return r.ok?r.json():null;}).then(cb).catch(function(){cb(null);});}
+function fbPutSt(st){fetch(FB_URL+'/arquiz/students/'+encodeURIComponent(st.id)+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)}).catch(function(){});}
+
+function normGS(p){
+  if(!p)return;
+  if(p.gameStatus&&!p.status)p.status=p.gameStatus;
+  if(p.students&&!Array.isArray(p.students))p.students=Object.values(p.students);
+  if(!p.infoMissions)p.infoMissions=[];
+  if(!p.animals3D)p.animals3D=[];
+  if(!p.privateMessages)p.privateMessages=[];
+}
+function loadGS(){try{var r=SS.get(SK);if(r){var p=JSON.parse(r);normGS(p);gs=Object.assign({},gs,p);}}catch(e){}}
+function saveMe(){
+  if(!me)return;
+  if(!gs.students)gs.students=[];
+  var i=gs.students.findIndex(function(s){return s.id===me.id;});
+  if(i>=0)gs.students[i]=me;else gs.students.push(me);
+  try{SS.set(SK,JSON.stringify(gs));}catch(e){}
+  try{var bc=new BroadcastChannel('arquiz');bc.postMessage({type:'student_update',student:me});bc.close();}catch(e){}
+  fbPutSt(me);
+}
+function calcScore(){
+  var a=(me.rewards||[]).reduce(function(s,r){return s+(r.pts||200);},0);
+  return a+(me.infoRewards||[]).length*100;
+}
+function saveCDs(){if(!me)return;try{SS.set('cd_'+me.id,JSON.stringify(cdTimers));}catch(e){}}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.add('hidden');});
+  var el=document.getElementById(id);if(el)el.classList.remove('hidden');
+  curScr=id;
+}
+
+/* LOGIN */
+function doJoin(){
+  var el=document.getElementById('nickInput');
+  var nick=(el?el.value:'').trim();
+  if(!nick){setErr('닉네임을 입력해주세요');return;}
+  if(nick.length>8){setErr('닉네임은 최대 8글자입니다');return;}
+  loadGS();
+  var active=(gs.students||[]).filter(function(s){return !s.kicked;});
+  if(active.find(function(s){return s.nickname===nick;})){setErr('이미 사용 중인 닉네임입니다');return;}
+  if(active.length>=MAX_ST){setErr('최대 인원(30명)에 도달했습니다');return;}
+  me={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),nickname:nick,score:0,correct:0,rewards:[],infoRewards:[],lastQR:null};
+  try{cdTimers=JSON.parse(SS.get('cd_'+me.id)||'{}');}catch(e){cdTimers={};}
+  saveMe();startPolling();
+  if(gs.status==='running')enterAndScan();else showWait();
+}
+function setErr(m){var e=document.getElementById('loginErr');if(e){e.textContent=m;setTimeout(function(){e.textContent='';},3000);}}
+
+/* WAIT */
+function showWait(){document.getElementById('wNick').textContent=me.nickname;updateWaitStats();show('scrWait');}
+function updateWaitStats(){
+  if(!me)return;
+  document.getElementById('wTotalScore').textContent=calcScore();
+  document.getElementById('wCorrect').textContent=me.correct||0;
+  document.getElementById('wColl').textContent=(me.rewards||[]).length;
+  var ac=(gs.students||[]).filter(function(s){return !s.kicked;});
+  document.getElementById('wBadge').textContent=ac.length+'/'+MAX_ST+'명';
+}
+
+/* ENTER GAME */
+function enterGame(){
+  if(!me)return;
+  document.getElementById('mainNick').textContent=me.nickname;
+  document.getElementById('mainScore').textContent=calcScore();
+  show('scrMain');showTab('home');
+}
+function enterAndScan(){enterGame();setTimeout(function(){openQR();},900);}
+function refreshScore(){if(me){document.getElementById('mainScore').textContent=calcScore();updateWaitStats();}}
+
+/* TABS */
+function showTab(tab){
+  ['home','qr','inv','animals','rank'].forEach(function(t){var b=document.getElementById('nb-'+t);if(b)b.classList.toggle('active',t===tab);});
+  var body=document.getElementById('mainBody');if(!body)return;
+  if(tab==='home')renderHome(body);
+  else if(tab==='inv')renderInv(body);
+  else if(tab==='rank')renderRank(body);
+  else if(tab==='animals')renderAnimals(body);
+}
+
+/* HOME */
+function renderHome(body){
+  loadGS();
+  var ended=(gs.status==='ended');
+  var globals=(gs.notices||[]).filter(function(n){return !n.type||n.type==='global';});
+  var latest=globals[0];
+  var total=calcScore();
+  var h='';
+  if(ended)h+='<div class="endbanner"><div style="font-size:17px;font-weight:700;color:var(--danger);margin-bottom:4px">🏁 게임 종료</div><div style="font-size:12px;color:var(--muted)">최종 순위를 확인하세요!</div></div>';
+  if(latest)h+='<div class="nbanner"><div style="font-size:15px">📢</div><div style="font-size:12px;color:var(--accent4);line-height:1.5"><strong>'+(latest.time||'')+'</strong><br>'+latest.text+'</div></div>';
+  h+='<div style="background:linear-gradient(135deg,var(--accent4)20,var(--accent)10);border:1px solid var(--accent4)40;border-radius:14px;padding:14px;margin-bottom:11px;text-align:center">'+
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600">⭐ 점수 합계</div>'+
+    '<div style="font-family:Orbitron,monospace;font-size:30px;font-weight:900;color:var(--accent4)">'+total+'</div>'+
+    '<div style="font-size:10px;color:var(--muted);margin-top:3px">3D동식물 '+(me.rewards||[]).length+'개 · 정보 '+(me.infoRewards||[]).length+'개</div></div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px">'+
+    '<div style="background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:900;color:var(--accent);font-family:Orbitron,monospace">'+(me.correct||0)+'</div><div style="font-size:10px;color:var(--muted);margin-top:3px">정답 수</div></div>'+
+    '<div style="background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:14px;text-align:center"><div style="font-size:24px;font-weight:900;color:var(--accent4);font-family:Orbitron,monospace">'+((me.rewards||[]).length)+'</div><div style="font-size:10px;color:var(--muted);margin-top:3px">보상 수집</div></div></div>';
+  if(!ended)h+='<div class="acard" style="border-color:var(--accent2)50" onclick="openQR()"><div style="font-size:36px;min-width:46px;text-align:center">📷</div><div style="flex:1"><div style="font-size:15px;font-weight:700;margin-bottom:2px">QR 코드 스캔</div><div style="font-size:12px;color:var(--muted)">QR 포인트를 찾아 퀴즈를 풀어보세요</div></div><div style="font-size:18px;color:var(--accent2)">›</div></div>';
+  h+='<div class="acard" onclick="showTab(\'inv\')"><div style="font-size:36px;min-width:46px;text-align:center">🎒</div><div style="flex:1"><div style="font-size:15px;font-weight:700;margin-bottom:2px">내 보상함 (3D동식물)</div><div style="font-size:12px;color:var(--muted)">'+(me.rewards||[]).length+'개 수집</div></div><div style="font-size:18px;color:var(--muted)">›</div></div>';
+  h+='<div class="acard" style="border-color:var(--accent3)30" onclick="openInfo()"><div style="font-size:36px;min-width:46px;text-align:center">📋</div><div style="flex:1"><div style="font-size:15px;font-weight:700;margin-bottom:2px">정보 획득</div><div style="font-size:12px;color:var(--muted)">'+(me.infoRewards||[]).length+'개 정보 · 각 100점</div></div><div style="font-size:18px;color:var(--accent3)">›</div></div>';
+  h+='<div class="acard" onclick="showTab(\'rank\')"><div style="font-size:36px;min-width:46px;text-align:center">🏆</div><div style="flex:1"><div style="font-size:15px;font-weight:700;margin-bottom:2px">전체 순위</div><div style="font-size:12px;color:var(--muted)">현재 내 순위 확인</div></div><div style="font-size:18px;color:var(--muted)">›</div></div>';
+  h+='<div style="margin-top:8px"><button onclick="exitApp()" style="width:100%;padding:13px;border-radius:12px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-family:Noto Sans KR,sans-serif;font-size:14px;cursor:pointer">🚪 게임 종료 / 앱 나가기</button></div>';
+  body.innerHTML=h;
+}
+
+/* INV */
+function renderInv(body){
+  var rews=me.rewards||[];var total=calcScore();
+  var h='<div style="font-size:15px;font-weight:700;padding:3px 0 6px">🎒 내 보상함 (3D동식물)</div>';
+  h+='<div style="background:linear-gradient(135deg,var(--accent4)18,var(--accent)10);border:1px solid var(--accent4)40;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px"><div style="font-size:11px;color:var(--muted)">⭐ 점수 합계</div><div style="font-family:Orbitron,monospace;font-size:20px;font-weight:900;color:var(--accent4)">'+total+'점</div></div>';
+  if(!rews.length){h+='<div style="text-align:center;color:var(--muted);padding:50px">아직 수집한 3D 동식물이 없습니다</div>';}
+  else{h+='<div class="igrid">';rews.forEach(function(r){h+='<div class="iitem" onclick="showWiki(this)" data-name="'+esc(r.name)+'"><div style="font-size:40px;margin-bottom:5px">'+r.emoji+'</div><div style="font-size:11px;color:var(--text);font-weight:600">'+r.name+'</div><div style="font-size:10px;color:var(--accent4);margin-top:2px;font-family:Orbitron,monospace">+'+r.pts+'pt</div></div>';});h+='</div>';}
+  body.innerHTML=h;
+}
+
+/* ANIMALS */
+function renderAnimals(body){
+  loadGS();var animals=gs.animals3D||[];var myNames=(me.rewards||[]).map(function(r){return r.name;});
+  var h='<div style="font-size:15px;font-weight:700;padding:3px 0 10px">🦁 희귀동식물 · 천연기념물 도감</div>';
+  h+='<div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">⭐ 획득한 동식물 · 어두운 항목은 미발견 · 터치하면 백과사전</div>';
+  if(!animals.length){h+='<div style="text-align:center;color:var(--muted);padding:50px">등록된 동식물이 없습니다</div>';}
+  else{
+    h+='<div class="agrid">';
+    animals.forEach(function(a){
+      var got=myNames.indexOf(a.name)>=0;
+      h+='<div class="aac '+(got?'got':'ngot')+'" onclick="showWiki(this)" data-name="'+esc(a.name)+'">'+
+        (got?'<div class="astar">⭐</div>':'')+
+        '<span class="aemoji">'+(a.emoji||'❓')+'</span>'+
+        '<div style="font-size:10px;font-weight:700;color:var(--text)">'+a.name+'</div>'+
+        '<div style="font-size:9px;color:var(--muted);margin-top:2px">'+(a.category==='animal'?'🐾 동물':'🌿 식물')+'</div>'+
+        '<div style="font-size:9px;color:var(--accent4);font-family:Orbitron,monospace;margin-top:1px">'+(a.pts||200)+'pt</div></div>';
+    });
+    h+='</div>';
+  }
+  body.innerHTML=h;
+}
+
+/* RANK */
+function renderRank(body){
+  loadGS();
+  var st=(gs.students||[]).filter(function(s){return !s.kicked;}).map(function(s){
+    var sc=(s.rewards||[]).reduce(function(t,r){return t+(r.pts||200);},0)+((s.infoRewards||[]).length*100)||s.score||0;
+    return Object.assign({},s,{_sc:sc});
+  }).sort(function(a,b){return b._sc-a._sc;});
+  var icons=['🥇','🥈','🥉'];
+  var h='<div style="font-size:15px;font-weight:700;padding:3px 0 11px">🏆 전체 순위</div>';
+  if(!st.length){h+='<div style="text-align:center;color:var(--muted);padding:50px">아직 참가자 없음</div>';}
+  else{st.forEach(function(s,i){var isMe=s.id===me.id;h+='<div class="ritem '+(isMe?'rme':'')+'">'+(icons[i]||'<span style="font-size:14px;font-weight:700;min-width:30px;text-align:center">'+(i+1)+'위</span>')+
+    '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:'+(isMe?'var(--accent)':'var(--text)')+'">'+s.nickname+(isMe?' (나)':'')+'</div>'+
+    '<div style="font-size:10px;color:var(--muted);margin-top:2px">정답 '+(s.correct||0)+'개 · 동식물 '+((s.rewards||[]).length)+'개</div></div>'+
+    '<div style="font-family:Orbitron,monospace;font-size:15px;font-weight:900;color:var(--accent4)">'+s._sc+'</div></div>';});}
+  body.innerHTML=h;
+}
+
+/* QR */
+function openQR(){
+  if(gs.status!=='running'){showToast('⏸ 게임이 시작되지 않았습니다');return;}
+  show('scrQR');startCam();
+}
+function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showToast('카메라를 지원하지 않는 브라우저입니다');return;}
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}})
+    .then(function(stream){
+      qrStream=stream;
+      var v=document.getElementById('qrVideo');
+      v.srcObject=stream;
+      v.play().then(function(){startDecode(v);}).catch(function(){
+        v.addEventListener('click',function(){v.play().then(function(){startDecode(v);});},{once:true});
+        showToast('화면을 탭하면 카메라가 켜집니다');
+      });
+    }).catch(function(e){showToast('카메라 권한이 필요합니다 ('+((e&&e.name)||'error')+')');}); 
+}
+function startDecode(video){
+  var canvas=document.getElementById('qrCanvas');
+  var ctx=canvas.getContext('2d');
+  var active=true;
+  function scan(){
+    if(!active||curScr!=='scrQR'){active=false;return;}
+    if(video.readyState>=2&&video.videoWidth>0){
+      canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+      ctx.drawImage(video,0,0);
+      try{
+        var img=ctx.getImageData(0,0,canvas.width,canvas.height);
+        var jsqr=window.jsQR;
+        if(jsqr){
+          var code=jsqr(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+          if(code&&code.data&&code.data.indexOf('arquiz:qr:')===0){
+            var num=parseInt(code.data.split(':')[2],10);
+            if(num>=1&&num<=QR_COUNT){
+              active=false;stopCam();
+              showToast('🎯 QR #'+num+' 인식!');
+              setTimeout(function(){startQuiz(num);},500);
+              return;
+            }
+          }
+        }
+      }catch(e){}
+    }
+    qrRaf=requestAnimationFrame(scan);
+  }
+  qrRaf=requestAnimationFrame(scan);
+}
+function stopCam(){if(qrRaf){cancelAnimationFrame(qrRaf);qrRaf=null;}if(qrStream){qrStream.getTracks().forEach(function(t){t.stop();});qrStream=null;}}
+function stopQR(){stopCam();show('scrMain');showTab('home');}
+
+/* QUIZ */
+function startQuiz(qrNum){
+  loadGS();
+  var mySt=(gs.students||[]).find(function(s){return s.id===me.id;});
+  if(mySt&&mySt.suspended){show('scrSuspended');return;}
+  curQR=qrNum;if(me)me.lastQR=qrNum;
+  var exp=cdTimers[qrNum];
+  if(exp&&Date.now()<exp){
+    document.getElementById('qrBadge').textContent='QR #'+qrNum;
+    document.getElementById('cdOv').style.display='flex';
+    document.getElementById('corOv').style.display='none';
+    document.getElementById('cdRW').style.display='none';
+    show('scrQuiz');startCDDisp(exp);return;
+  }
+  var pool=(gs.quizzes||[]).filter(function(q){return q.qr===qrNum;});
+  if(!pool.length){showToast('QR #'+qrNum+'에 등록된 퀴즈가 없습니다');show('scrMain');showTab('home');return;}
+  var shuffled=pool.slice().sort(function(){return Math.random()-.5;});
+  var sel=[];
+  while(sel.length<QUIZ_PER_QR){
+    shuffled.sort(function(){return Math.random()-.5;});
+    for(var i=0;i<shuffled.length&&sel.length<QUIZ_PER_QR;i++)sel.push(shuffled[i]);
+  }
+  qList=sel.slice(0,QUIZ_PER_QR);qIdx=0;locked=false;
+  document.getElementById('qrBadge').textContent='QR #'+qrNum;
+  document.getElementById('cdOv').style.display='none';
+  document.getElementById('corOv').style.display='none';
+  show('scrQuiz');renderQuiz();
+}
+
+function renderQuiz(){
+  locked=false;
+  document.getElementById('cdOv').style.display='none';
+  document.getElementById('corOv').style.display='none';
+  if(qIdx>=qList.length){
+    showToast('🎉 이 QR 퀴즈를 모두 풀었습니다!');
+    setTimeout(function(){show('scrMain');showTab('home');setTimeout(openQR,600);},1200);
+    return;
+  }
+  var q=qList[qIdx];
+  document.getElementById('qzProg').textContent=(qIdx+1)+'/'+qList.length;
+  var labs=['①','②','③','④'];
+  var h='<div class="qnbadge">문제 '+(qIdx+1)+'</div>';
+  h+='<div class="qqtext">'+escHtml(q.question)+'</div>';
+  h+='<div class="optgrid" id="optGrid">';
+  for(var i=0;i<4;i++){
+    h+='<div class="optblk" data-idx="'+i+'" id="op'+i+'">'+
+      '<div class="optn">'+labs[i]+'</div>'+
+      '<div style="font-size:13px">'+escHtml(q.opts[i]||'')+'</div></div>';
+  }
+  h+='</div>';
+  document.getElementById('qzBody').innerHTML=h;
+  var grid=document.getElementById('optGrid');
+  if(grid){
+    grid.addEventListener('click',function handler(e){
+      if(locked)return;
+      var blk=e.target.closest('.optblk');
+      if(!blk)return;
+      grid.removeEventListener('click',handler);
+      handleAns(parseInt(blk.dataset.idx,10),q);
+    });
+  }
+}
+
+function handleAns(selIdx,quiz){
+  if(locked)return;locked=true;
+  var corIdx=quiz.answer-1;
+  var selEl=document.getElementById('op'+selIdx);
+  if(selEl)selEl.classList.add('sel');
+  setTimeout(function(){
+    var corEl=document.getElementById('op'+corIdx);
+    if(corEl)corEl.classList.add('cor');
+    if(selIdx===corIdx){
+      me.correct=(me.correct||0)+1;
+      var myNames=(me.rewards||[]).map(function(r){return r.name;});
+      var avail=(gs.animals3D||[]).filter(function(a){return myNames.indexOf(a.name)<0;});
+      var pool2=avail.length?avail:(gs.animals3D||[]);
+      var rw=pool2.length?Object.assign({},pool2[Math.floor(Math.random()*pool2.length)]):{name:'황금배지',emoji:'🏅',pts:200};
+      rw.pts=rw.pts||200;
+      if(!me.rewards)me.rewards=[];
+      me.rewards.push(Object.assign({},rw,{qr:curQR,earnedAt:Date.now()}));
+      var myInfoIds=(me.infoRewards||[]).map(function(r){return r.id;});
+      var availInfo=(gs.infoMissions||[]).filter(function(m){return myInfoIds.indexOf(m.id)<0;});
+      var infoRw=null;
+      if(availInfo.length){infoRw=availInfo[Math.floor(Math.random()*availInfo.length)];if(!me.infoRewards)me.infoRewards=[];me.infoRewards.push(Object.assign({},infoRw,{earnedAt:Date.now()}));}
+      me.score=calcScore();saveMe();refreshScore();showCorOverlay(rw,infoRw);
+    } else {
+      if(selEl)selEl.classList.add('wrg');
+      var exp=Date.now()+COOLDOWN_S*1000;cdTimers[curQR]=exp;saveCDs();
+      setTimeout(function(){document.getElementById('cdOv').style.display='flex';document.getElementById('cdRW').style.display='none';startCDDisp(exp);},900);
+    }
+  },400);
+}
+
+function showCorOverlay(rw,infoRw){
+  document.getElementById('corEmoji').textContent=rw.emoji||'🏅';
+  document.getElementById('corName').textContent=(rw.name||'보상')+' 획득!';
+  document.getElementById('corPts').textContent='+'+rw.pts+'점';
+  var al=document.getElementById('corAlso');
+  if(infoRw){al.style.display='block';document.getElementById('corAlsoTxt').textContent=infoRw.title+' (+100점)';}
+  else al.style.display='none';
+  var f=document.getElementById('autoFill');f.style.animation='none';f.offsetHeight;f.style.animation='fillbar 1s linear forwards';
+  document.getElementById('corOv').style.display='flex';
+  particles(['🎊','✨','🌟','🦋','⭐','🌿']);
+  setTimeout(function(){
+    document.getElementById('corOv').style.display='none';
+    qIdx++;
+    if(qIdx>=qList.length){show('scrMain');showTab('home');setTimeout(openQR,600);}
+    else renderQuiz();
+  },1200);
+}
+
+function startCDDisp(exp){
+  var tmr=document.getElementById('cdTimer');var rw=document.getElementById('cdRW');rw.style.display='none';
+  if(cdInv)clearInterval(cdInv);
+  cdInv=setInterval(function(){
+    var rem=Math.ceil((exp-Date.now())/1000);
+    if(rem<=0){clearInterval(cdInv);cdInv=null;if(tmr)tmr.textContent='0';rw.style.display='block';delete cdTimers[curQR];saveCDs();}
+    else if(tmr)tmr.textContent=rem;
+  },500);
+}
+function exitQuiz(){if(cdInv){clearInterval(cdInv);cdInv=null;}show('scrMain');showTab('home');}
+
+/* 정보 모달 */
+function openInfo(){
+  var list=document.getElementById('infoList');var rews=me.infoRewards||[];
+  if(!rews.length){list.innerHTML='<div style="text-align:center;color:var(--muted);padding:40px">아직 획득한 정보가 없습니다</div>';}
+  else{list.innerHTML=rews.map(function(r){return '<div class="iinfo"><div style="display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;background:var(--accent3)20;color:var(--accent3);margin-bottom:6px">'+(r.category||'기타')+'</div><div style="font-size:14px;font-weight:700;margin-bottom:5px">'+escHtml(r.title)+'</div><div style="font-size:12px;color:var(--muted);line-height:1.7">'+escHtml(r.content)+'</div><div style="font-size:10px;color:var(--accent4);font-family:Orbitron,monospace;margin-top:6px">+100점</div></div>';}).join('');}
+  document.getElementById('infoOv').style.display='flex';
+}
+function closeInfo(){document.getElementById('infoOv').style.display='none';}
+
+/* 백과사전 */
+function showWiki(el){
+  loadGS();
+  var name=el.dataset?el.dataset.name:el;
+  if(!name)return;
+  var a=(gs.animals3D||[]).find(function(x){return x.name===name;});
+  if(!a)return;
+  var myNames=(me.rewards||[]).map(function(r){return r.name;});
+  document.getElementById('wEmoji').textContent=a.emoji||'❓';
+  document.getElementById('wTitle').textContent=a.name;
+  document.getElementById('wSub').textContent=a.category==='animal'?'천연기념물 보호 동물':'천연기념물 보호 식물';
+  document.getElementById('wBadgeEl').textContent=a.category==='animal'?'🐾 동물':'🌿 식물';
+  document.getElementById('wDesc').textContent=a.description||'설명 정보가 없습니다.';
+  document.getElementById('wPts').textContent='획득 점수: '+(a.pts||200)+'점';
+  document.getElementById('wGotEl').style.display=myNames.indexOf(name)>=0?'block':'none';
+  curNavUrl=a.naverUrl||'';
+  document.getElementById('wNavBtn').style.opacity=curNavUrl?'1':'0.4';
+  document.getElementById('wikiOv').style.display='flex';
+}
+function openNaver(){if(!curNavUrl){showToast('백과사전 링크가 없습니다');return;}window.open(curNavUrl,'_blank');}
+function closeWiki(){document.getElementById('wikiOv').style.display='none';}
+
+/* POLLING */
+function startPolling(){
+  if(polId)return;
+  try{var bc=new BroadcastChannel('arquiz');bc.onmessage=function(e){if(e.data&&e.data.type==='state_update'){var prev=gs.status;normGS(e.data.state);gs=Object.assign({},gs,e.data.state);onSC(prev);}};}catch(e){}
+  polId=setInterval(function(){
+    var prev=gs.status;
+    fbGet(function(remote){
+      if(remote){normGS(remote);if(me){var sa=Array.isArray(remote.students)?remote.students:Object.values(remote.students||{});var mst=sa.find(function(s){return s.id===me.id;});if(mst)me.suspended=!!mst.suspended;}gs=Object.assign({},gs,remote);try{SS.set(SK,JSON.stringify(gs));}catch(e){}}
+      else loadGS();
+      onSC(prev);
+      if(curScr==='scrWait')updateWaitStats();
+      if(curScr==='scrMain')refreshScore();
+    });
+  },3000);
+}
+function onSC(prev){
+  var cur=gs.status;
+  if(cur==='running'&&prev!=='running'&&(curScr==='scrWait'||curScr==='scrLogin')){if(!me)return;showToast('🎮 게임 시작! 카메라를 켭니다...');setTimeout(function(){enterAndScan();},1300);return;}
+  if(me&&curScr!=='scrSuspended'){var mst=(gs.students||[]).find(function(s){return s.id===me.id;});if(mst&&mst.suspended&&curScr!=='scrLogin'){show('scrSuspended');return;}if(mst&&!mst.suspended&&curScr==='scrSuspended'){me.suspended=false;enterGame();return;}}
+  var glbs=(gs.notices||[]).filter(function(n){return !n.type||n.type==='global';});
+  if(glbs.length){var lat=glbs[0];var k='lastNId';var cid=lat.id||lat.time||'';if(cid&&cid!==SS.get(k)){SS.set(k,cid);showNPopup(lat.text,'📢 공지','var(--accent4)');}}
+  if(me&&(gs.privateMessages||[]).length){var mine=(gs.privateMessages||[]).filter(function(m){return m.toId===me.id;});if(mine.length){var lm=mine[0];var pk='lpm_'+me.id;if(lm.id&&lm.id!==SS.get(pk)){SS.set(pk,lm.id);showNPopup(lm.text,'💬 개인 메세지','var(--accent2)');}}}
+}
+function showNPopup(text,label,color){
+  var el=document.createElement('div');
+  el.style.cssText='position:fixed;top:68px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid '+color+';border-radius:11px;padding:12px 16px 12px 14px;z-index:9998;max-width:90vw;box-shadow:0 6px 24px '+color+'30;animation:tup .3s ease';
+  el.innerHTML='<div style="font-size:10px;color:'+color+';margin-bottom:3px;font-weight:700">'+label+'</div><div style="font-size:13px;color:var(--text)">'+text+'</div><button onclick="this.parentElement.remove()" style="position:absolute;top:6px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">✕</button>';
+  document.body.appendChild(el);setTimeout(function(){if(el.parentNode)el.remove();},6000);
+}
+
+/* UTILS */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showToast(msg){document.querySelectorAll('.toast').forEach(function(t){t.remove();});var t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2800);}
+function particles(emojis){for(var i=0;i<16;i++){(function(j){setTimeout(function(){var p=document.createElement('div');p.style.cssText='position:fixed;left:'+Math.random()*100+'vw;bottom:-10px;font-size:'+(16+Math.random()*18)+'px;z-index:9997;animation:pfly '+(1+Math.random()*.8)+'s ease-out forwards;pointer-events:none';p.textContent=emojis[Math.floor(Math.random()*emojis.length)];document.body.appendChild(p);setTimeout(function(){p.remove();},2100);},j*65);})(i);}}
+function exitApp(){if(!confirm('게임을 종료하시겠습니까?'))return;stopCam();document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#080c18;color:#e2e8f0;text-align:center;padding:30px"><div style="font-size:60px;margin-bottom:20px">👋</div><div style="font-size:22px;font-weight:700;color:#00f5a0;margin-bottom:12px">수고하셨습니다!</div><div style="font-size:14px;color:#64748b;line-height:1.8">게임이 종료되었습니다.<br>브라우저 탭을 닫아주세요.</div></div>';try{window.close();}catch(e){}}
+
+/* INIT */
+document.addEventListener('DOMContentLoaded',function(){
+  loadGS();
+  var active=(gs.students||[]).filter(function(s){return !s.kicked;});
+  document.getElementById('playerCountTxt').textContent='참가자 '+active.length+' / '+MAX_ST+'명';
+  var nick=document.getElementById('nickInput');
+  nick.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();doJoin();}});
+  var btn=document.getElementById('joinBtn');
+  btn.addEventListener('click',function(){doJoin();});
+  btn.addEventListener('touchend',function(e){e.preventDefault();doJoin();},{passive:false});
+});
+</script>
+</body>
+</html>
